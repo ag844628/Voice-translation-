@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voice Translator AI</string>
+    <string name="speak_now">🎙️ बोला (Speak now)</string>
+    <string name="voice_male">👨 पुरुष (Male)</string>
+    <string name="voice_female">👩 स्त्री (Female)</string>
+</resources>
