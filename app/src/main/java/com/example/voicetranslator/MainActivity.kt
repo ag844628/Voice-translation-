@@ -102,6 +102,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         checkAudioPermission()
 
         btnSpeak.setOnClickListener {
+            if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                Toast.makeText(this, "Speech recognition is not available on this device", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             val selectedSource = languages[spinnerSourceLang.selectedItemPosition].second
             startListening(selectedSource)
         }
@@ -138,7 +143,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun checkAudioPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.RECORD_AUDIO),
@@ -148,6 +154,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun startListening(languageCode: String) {
+        if (!::speechRecognizer.isInitialized) {
+            Toast.makeText(this, "Speech recognizer is not ready", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageCode)
@@ -263,6 +274,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun speakText(text: String, langCode: String) {
+        if (!::tts.isInitialized) {
+            return
+        }
+
         val localeParts = langCode.split("-")
         val targetLocale = if (localeParts.size > 1) {
             Locale(localeParts[0], localeParts[1])
@@ -293,6 +308,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     }
                 }
             } catch (e: Exception) {
+                // Fallback gracefully when the device has no matching TTS voice profile.
             }
         }
 
@@ -321,8 +337,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        speechRecognizer.destroy()
-        tts.stop()
-        tts.shutdown()
+        if (::speechRecognizer.isInitialized) {
+            speechRecognizer.destroy()
+        }
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
+        }
     }
 }
